@@ -12,6 +12,19 @@ from reportlab.lib import colors
 
 w, h = portrait(A4)
 
+def adjust_font_size(text, font_name, max_width, cv):
+    """
+    テキストの長さに応じてフォントサイズを調整する関数。
+    """
+    font_size = 10  # 基本のフォントサイズ
+    text_width = cv.stringWidth(text, font_name, font_size)
+    
+    # 文字幅が最大幅を超えた場合、フォントサイズを縮小
+    if text_width > max_width:
+        font_size = font_size * (max_width / text_width)
+    
+    return font_size
+
 def create_pdf_files(uploaded_file):
     pdfmetrics.registerFont(TTFont('mmt', './fonts/GenShinGothic-Monospace-Medium.ttf'))
     output_files = []
@@ -43,25 +56,47 @@ def create_pdf_files(uploaded_file):
         cv.setFont('mmt', 12)
 
         # 顧客情報の描画
-        customer_id = record['顧客ID']
-        customer_id_str = str(int(customer_id)) if customer_id else ''
+        customer_id = record.get('顧客ID', '')  # 列が存在しない場合は空文字列を使用
         cv.setFont('mmt', 10) 
-        cv.drawString(30, h - 120, f"顧客ID:{customer_id_str}")
-        cv.drawString(30, h - 60, 'お買い上げ明細書')
+        cv.drawString(30, h - 120, f"顧客ID:{customer_id}")
+        cv.drawString(30, h - 60, '納品書')
         cv.setFont('mmt', 12) 
         cv.drawString(30, h - 80, 'この度はお買い上げいただき、ありがとうございます。')
+        
+        # 住所情報の描画（存在しない列は空文字列）
+        o_todokede_saki_1 = record.get('お届け先名称1', '')
+        o_todokede_saki_2 = record.get('お届け先名称2', '')
+        o_todokede_yubin = record.get('お届け先郵便番号', '')
+        o_todokede_jusho_1 = record.get('お届け先住所1', '')
+        o_todokede_jusho_2 = record.get('お届け先住所2', '')
+        o_todokede_jusho_3 = record.get('お届け先住所3', '')
+
+        # 「お届け先名称1」の文字サイズ調整
+        max_width_1 = 200  # 最大表示幅
+        adjusted_font_size_1 = adjust_font_size(f"{o_todokede_saki_1}様", 'mmt', max_width_1, cv)
+        cv.setFont('mmt', adjusted_font_size_1)
+        cv.drawString(30, h - 140, f"{o_todokede_saki_1}様")
+
+        
+        
+        # その他の情報
+        cv.setFont('mmt', 10)  # 通常のフォントサイズに戻す
+        cv.drawString(30, h - 155, f"〒{o_todokede_yubin}")
+        cv.drawString(30, h - 170, str(o_todokede_jusho_1))
+        cv.drawString(30, h - 185, str(o_todokede_jusho_2))
+        cv.drawString(30, h - 200, str(o_todokede_jusho_3))
+
+        # ご依頼主情報の描画
+        go_irainushi_name = record.get('ご依頼主名称1', '')
+        go_irainushi_yubin = record.get('ご依頼主郵便番号', '')
+        go_irainushi_jusho_1 = record.get('ご依頼主住所1', '')
+        go_irainushi_jusho_2 = record.get('ご依頼主住所2', '')
+
         cv.setFont('mmt', 10)
-        cv.drawString(30, h - 140, f"{record['お届け先名称1']}")
-        cv.drawString(75, h - 140, f"{record['お届け先名称2']} 様")
-        cv.drawString(30, h - 155, f"〒{record['お届け先郵便番号']}")
-        cv.drawString(30, h - 170, str(record['お届け先住所1']))
-        cv.drawString(30, h - 185, str(record['お届け先住所2']))
-        cv.drawString(30, h - 200, str(record['お届け先住所3']))
-        cv.setFont('mmt', 10)
-        cv.drawString(350, h - 120, str(record['ご依頼主名称1']))
-        cv.drawString(350, h - 140, f"〒{record['ご依頼主郵便番号']}")
-        cv.drawString(350, h - 155, str(record['ご依頼主住所1']))
-        cv.drawString(350, h - 170, str(record['ご依頼主住所2']))
+        cv.drawString(350, h - 140, go_irainushi_name)
+        cv.drawString(350, h - 155, f"〒{go_irainushi_yubin}")
+        cv.drawString(350, h - 170, go_irainushi_jusho_1)
+        cv.drawString(350, h - 185, go_irainushi_jusho_2)
 
         # 商品リストの描画
         items = get_items(record)
@@ -110,15 +145,15 @@ def get_items(record):
         count_col = f'商品数量{i + 1}'
 
         # 列が存在するか確認してから値を取得
-        code = record[sku_col] if sku_col in record else None
-        name = record[name_col] if name_col in record else None
-        count = record[count_col] if count_col in record else None
+        code = record.get(sku_col, None)
+        name = record.get(name_col, None)
+        count = record.get(count_col, None)
 
-        if code:  # 商品コードが空でない場合
+        if code and pd.notna(code):  # 商品コードが空でない場合
             if code not in items_dict:
                 item = {
                     'code': code,
-                    'name': name,
+                    'name': name if pd.notna(name) else '',
                     'count': int(count) if pd.notna(count) else 0,  # 数量を整数型に変換
                 }
                 items_dict[code] = item
@@ -129,7 +164,7 @@ def get_items(record):
     return items
 
 def merge_pdf_in_dir(dir_path, dst_path):
-    l = glob.glob(os.path.join(dir_path, '*.pdf'))
+    l = glob.glob(os.path.join(dir_path, 'output_*.pdf'))
     l.sort()
 
     merger = PdfMerger()
@@ -141,7 +176,8 @@ def merge_pdf_in_dir(dir_path, dst_path):
     merger.close()
 
 def main():
-    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")  # CSVファイルを選択できるように変更
+    st.title('PDF生成システム')
+    uploaded_file = st.file_uploader("CSVファイルを選択してください", type="csv")  # CSVファイルを選択できるように変更
     if uploaded_file is not None:
         output_files = create_pdf_files(uploaded_file)
         merged_file = './output/merged.pdf'
@@ -149,7 +185,7 @@ def main():
 
         with open(merged_file, "rb") as f:
             st.download_button(
-                label="Download Merged PDF",
+                label="PDFをダウンロード",
                 data=f,
                 file_name="merged.pdf",
                 mime="application/pdf",

@@ -42,10 +42,15 @@ def picking_page():
                         else:
                             item_code_num[item_code] += int(item_num)
 
-            sorted_items = sorted(
-                item_code_name.keys(),
-                key=lambda x: (x[0], int(x[1:]))
-            )
+            def sort_key(item):
+                try:
+                    # 1文字目はアルファベット、2文字目以降を整数として扱う
+                    return (item[0], int(item[1:]))
+                except ValueError:
+                    # 整数に変換できない場合、そのまま扱う
+                    return (item[0], item[1:])
+
+            sorted_items = sorted(item_code_name.keys(), key=sort_key)
 
             picking_datas = [["SKU", "商品名", "合計数量"]]
             for code in sorted_items:
