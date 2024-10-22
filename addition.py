@@ -3,13 +3,13 @@ import pandas as pd
 import base64
 from io import BytesIO
 
-def calculate_additional_quantity(a_sku_quantity):
+def calculate_additional_quantity(sku_quantity):
     """
     商品数量に基づき、追加数量を計算
     4点: +1, 5点: +2, 6点: +3、以降1点増えるごとに+1
     """
-    if a_sku_quantity >= 4:
-        return a_sku_quantity - 3  # 4点で+1、5点で+2、6点で+3
+    if sku_quantity >= 4:
+        return sku_quantity - 3  # 4点で+1、5点で+2、6点で+3
     else:
         return 0  # 3点以下の場合は追加数量なし
 
@@ -18,10 +18,13 @@ def process_file(uploaded_file):
     header = list(df.columns)  # ヘッダーを保存
     result = []
     
+    # SKUの条件を複数設定
+    valid_sku_prefixes = ['dear-des-1', 'dear-esc-1', 'dear-mcl-1']  # 複数のSKU条件を設定（AまたはBで始まるSKUを探す）
+
     for _, row in df.iterrows():
-        total_a_sku_quantity = 0
+        total_sku_quantity = 0
         
-        # SKU1〜SKU10から、SKUがAで始まるものを探す
+        # SKU1〜SKU10から、SKUが指定された条件で始まるものを探す
         for i in range(10):  # SKU1〜SKU10までを処理
             sku_col = f'SKU{i+1}'
             qty_col = f'商品数量{i+1}'
@@ -30,18 +33,19 @@ def process_file(uploaded_file):
                 sku = row[sku_col]
                 quantity = row[qty_col]
                 
-                if pd.notna(sku) and sku.startswith('A'):  # SKUがAで始まるかチェック
-                    total_a_sku_quantity += quantity
+                # 複数条件に一致するSKUをカウント
+                if pd.notna(sku) and any(sku.startswith(prefix) for prefix in valid_sku_prefixes):
+                    total_sku_quantity += quantity
         
         # 追加数量の計算
-        additional_quantity = calculate_additional_quantity(total_a_sku_quantity)
+        additional_quantity = calculate_additional_quantity(total_sku_quantity)
         
         # 行に追加数量を含めて結果リストに追加
-        row_with_additional = row.tolist() + [total_a_sku_quantity, additional_quantity]
+        row_with_additional = row.tolist() + [total_sku_quantity, additional_quantity]
         result.append(row_with_additional)
     
     # 新しい列を追加したデータフレームを作成
-    new_columns = header + ['Aから始まるSKUの総数量', '追加数量']
+    new_columns = header + ['指定されたSKUの総数量', '追加数量']
     result_df = pd.DataFrame(result, columns=new_columns)
     
     return result_df
