@@ -128,9 +128,12 @@ def create_pdf_files(uploaded_file):
 
         # 各商品の描画
         for i, item in enumerate(items):
+    # 商品名から不要な制御文字や全角スペースを削除
+            item_name_cleaned = item['name'].replace('\n', '').replace('\r', '').replace('　', ' ').strip()
             cv.drawString(x_start + 10, y_start - 20 * (i + 1) + 5, str(item['code']))
-            cv.drawString(x_start + 110, y_start - 20 * (i + 1) + 5, item['name'])
+            cv.drawString(x_start + 110, y_start - 20 * (i + 1) + 5, item_name_cleaned)  # 商品名を表示
             cv.drawString(x_start + 310, y_start - 20 * (i + 1) + 5, str(int(item['count'])))
+
 
         # ページ番号を追加
         cv.setFont('mmt', 10)
