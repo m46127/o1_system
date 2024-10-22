@@ -45,6 +45,8 @@ def create_pdf_files(uploaded_file):
     df = pd.read_csv(uploaded_file)  # CSVファイルを読み込む
     df = df.fillna('')  # NaNを空文字列に置き換える
 
+    total_pages = len(df)  # 総ページ数を取得
+
     for index, record in df.iterrows():
         # ファイルの指定
         output_file = f'./output/output_{index+1}.pdf'  # 完成したPDFの保存先
@@ -77,8 +79,6 @@ def create_pdf_files(uploaded_file):
         cv.setFont('mmt', adjusted_font_size_1)
         cv.drawString(30, h - 140, f"{o_todokede_saki_1}様")
 
-        
-        
         # その他の情報
         cv.setFont('mmt', 10)  # 通常のフォントサイズに戻す
         cv.drawString(30, h - 155, f"〒{o_todokede_yubin}")
@@ -131,6 +131,11 @@ def create_pdf_files(uploaded_file):
             cv.drawString(x_start + 10, y_start - 20 * (i + 1) + 5, str(item['code']))
             cv.drawString(x_start + 110, y_start - 20 * (i + 1) + 5, item['name'])
             cv.drawString(x_start + 310, y_start - 20 * (i + 1) + 5, str(int(item['count'])))
+
+        # ページ番号を追加
+        cv.setFont('mmt', 10)
+        cv.drawString(w - 100, 15, f"{index + 1}")
+
 
         # PDFの保存
         cv.showPage()
