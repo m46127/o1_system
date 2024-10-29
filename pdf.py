@@ -49,7 +49,7 @@ def create_pdf_files(uploaded_file):
 
     for index, record in df.iterrows():
         # ファイルの指定
-        output_file = f'./output/output_{index+1}.pdf'  # 完成したPDFの保存先
+        output_file = f'./output/output_{index+1:04d}.pdf'  # 完成したPDFの保存先
         output_files.append(output_file)
         
         # キャンバスの設定
@@ -126,17 +126,14 @@ def create_pdf_files(uploaded_file):
 
         # 各商品の描画
         for i, item in enumerate(items):
-    # 商品名から不要な制御文字や全角スペースを削除
             item_name_cleaned = item['name'].replace('\n', '').replace('\r', '').replace('　', ' ').strip()
             cv.drawString(x_start + 10, y_start - 20 * (i + 1) + 5, str(item['code']))
             cv.drawString(x_start + 110, y_start - 20 * (i + 1) + 5, item_name_cleaned)  # 商品名を表示
             cv.drawString(x_start + 310, y_start - 20 * (i + 1) + 5, str(int(item['count'])))
 
-
         # ページ番号を追加
         cv.setFont('mmt', 10)
         cv.drawString(w - 100, 15, f"{index + 1}")
-
 
         # PDFの保存
         cv.showPage()
@@ -165,6 +162,7 @@ def get_items(record):
                 items_dict[code] = item
             else:
                 items_dict[code]['count'] += int(count) if pd.notna(count) else 0
+
 
     items = list(items_dict.values())
     return items
