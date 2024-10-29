@@ -60,7 +60,6 @@ def create_pdf_files(uploaded_file):
         # 顧客情報の描画
         customer_id = record.get('顧客ID', '')  # 列が存在しない場合は空文字列を使用
         cv.setFont('mmt', 10) 
-        cv.drawString(30, h - 120, f"顧客ID:{customer_id}")
         cv.drawString(30, h - 60, '納品書')
         cv.setFont('mmt', 12) 
         cv.drawString(30, h - 80, 'この度はお買い上げいただき、ありがとうございます。')
@@ -81,7 +80,6 @@ def create_pdf_files(uploaded_file):
 
         # その他の情報
         cv.setFont('mmt', 10)  # 通常のフォントサイズに戻す
-        cv.drawString(30, h - 155, f"〒{o_todokede_yubin}")
         cv.drawString(30, h - 170, str(o_todokede_jusho_1))
         cv.drawString(30, h - 185, str(o_todokede_jusho_2))
         cv.drawString(30, h - 200, str(o_todokede_jusho_3))
