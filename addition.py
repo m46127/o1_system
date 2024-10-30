@@ -19,13 +19,13 @@ def process_file(uploaded_file):
     result = []
     
     # SKUの条件を複数設定
-    valid_sku_prefixes = ['dear-des-1', 'dear-esc-1', 'dear-mcl-1']  # 複数のSKU条件を設定（AまたはBで始まるSKUを探す）
+    valid_sku_prefixes = ['dear-esc-1', 'dear-mcl-1', 'dear-fwa-1', 'dear-mlo-1', 'dear-des-1', 'dear-full-1']
 
     for _, row in df.iterrows():
         total_sku_quantity = 0
         
         # SKU1〜SKU10から、SKUが指定された条件で始まるものを探す
-        for i in range(10):  # SKU1〜SKU10までを処理
+        for i in range(10):
             sku_col = f'SKU{i+1}'
             qty_col = f'商品数量{i+1}'
             
@@ -50,14 +50,16 @@ def process_file(uploaded_file):
     
     return result_df
 
-def download_link(df, filename='output.csv'):
-    # DataFrameをCSV形式でバイナリに変換
+def download_link_excel(df, filename='output.xlsx'):
+    # DataFrameをExcel形式でバイナリに変換
     output = BytesIO()
-    df.to_csv(output, index=False)
-    
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Sheet1')
+    output.seek(0)
+
     # エンコードしてダウンロードリンクを作成
     b64 = base64.b64encode(output.getvalue()).decode()
-    href = f'<a href="data:application/octet-stream;base64,{b64}" download="{filename}">Download CSV File</a>'
+    href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="{filename}">Download Excel File</a>'
     return href
 
 def main():
@@ -75,7 +77,7 @@ def main():
             st.dataframe(result_df)
             
             # ダウンロードリンクを表示
-            st.markdown(download_link(result_df), unsafe_allow_html=True)
+            st.markdown(download_link_excel(result_df), unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
