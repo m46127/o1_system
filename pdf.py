@@ -74,13 +74,13 @@ def create_pdf_files(uploaded_file):
 
         # ご依頼主情報の描画
         go_irainushi_name = record.get('ご依頼主名称1', '')
-        go_irainushi_yubin = record.get('ご依頼主郵便番号', '')
+        #go_irainushi_yubin = record.get('ご依頼主郵便番号', '')
         go_irainushi_jusho_1 = record.get('ご依頼主住所1', '')
         go_irainushi_jusho_2 = record.get('ご依頼主住所2', '')
 
         cv.setFont('mmt', 10)
         cv.drawString(350, h - 140, go_irainushi_name)
-        cv.drawString(350, h - 155, f"〒{go_irainushi_yubin}")
+        #cv.drawString(350, h - 155, f"〒{go_irainushi_yubin}")
         cv.drawString(350, h - 170, go_irainushi_jusho_1)
         cv.drawString(350, h - 185, go_irainushi_jusho_2)
 
