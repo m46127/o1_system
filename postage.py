@@ -25,38 +25,42 @@ shipping_rules = {
 
 # 送料計算関数
 def calculate_shipping(row):
-    # 行から都道府県、重量、個数を取得し、全角数字を半角に変換
-    prefecture = row['着店県名称']
-    weight = zenkaku_to_hankaku(str(row['明細１重量']))
-    quantity = zenkaku_to_hankaku(str(row['明細１個数']))
+    prefecture = row['着店県名称'].strip()  # 空白を削除して都道府県名を取得
+    weight_columns = ['明細１重量', '明細２重量', '明細３重量', '明細４重量', '明細５重量', '明細６重量', '明細７重量', '明細８重量']
+    quantity_columns = ['明細１個数', '明細２個数', '明細３個数', '明細４個数', '明細５個数', '明細６個数', '明細７個数', '明細８個数']
 
-    # 数値に変換
-    try:
-        weight = float(weight)
-        quantity = int(quantity)
-    except ValueError:
-        return 0  # 数値に変換できない場合は送料0円
+    total_shipping = 0
+    st.write(f"都道府県: {prefecture}")
 
-    # デバッグ用の出力
-    st.write(f"Processing: {prefecture}, {weight}, {quantity}")
+    for weight_col, qty_col in zip(weight_columns, quantity_columns):
+        weight = zenkaku_to_hankaku(str(row.get(weight_col, 0))).strip()  # 空白を削除
+        quantity = zenkaku_to_hankaku(str(row.get(qty_col, 0))).strip()  # 空白を削除
 
-    # 沖縄の場合の特別処理
-    if prefecture == '沖縄県':
-        shipping_fee = row['明細運賃V'] * 0.1
-        return shipping_fee * quantity
+        # 数値に変換
+        try:
+            weight = float(weight)
+            quantity = int(quantity)
+            st.write(f"{weight_col}: {weight}, {qty_col}: {quantity}")
+        except ValueError:
+            st.write(f"{weight_col}: エラー, {qty_col}: エラー")
+            continue
 
-    # ルールに基づき送料を計算
-    for region, rates in shipping_rules.items():
-        if prefecture in region.split(','):
-            for max_weight, rate in sorted(rates.items()):
-                if weight <= max_weight:
-                    return rate * quantity  # 該当する送料に「明細1個数」を掛ける
-    
-    # 5kg以下の場合は500円
-    if weight <= 5:
-        return 500 * quantity
-    
-    return 0  # 該当しない場合は送料0円
+        # 送料ルールの適用
+        rule_applied = False  # ルールが適用されたかどうかを確認
+        for region, rates in shipping_rules.items():
+            if prefecture in region.split(','):
+                for max_weight, rate in sorted(rates.items()):
+                    if weight <= max_weight:
+                        total_shipping += rate * quantity
+                        st.write(f"適用された料金: {rate}円, 個数: {quantity}, 部分送料: {rate * quantity}円")
+                        rule_applied = True
+                        break
+                if rule_applied:
+                    break
+        if not rule_applied:
+            st.write(f"都道府県: {prefecture}に該当する送料ルールが見つかりません")
+
+    return total_shipping
 
 def main():
     st.title("送料集計システム")
@@ -65,11 +69,8 @@ def main():
     uploaded_file = st.file_uploader("CSVファイルを選択してください", type="csv")
     
     if uploaded_file is not None:
-        # CSVファイルをデータフレームとして読み込む（Shift_JISエンコーディングで）
         df = pd.read_csv(uploaded_file, encoding='shift_jis')
-
-        # データを表示（オプション）
-        st.write(df.head())
+        st.write("データの最初の数行:", df.head())
 
         # 送料を計算して新しい列に追加
         df['送料'] = df.apply(calculate_shipping, axis=1)
@@ -78,7 +79,7 @@ def main():
         total_shipping = df['送料'].sum()
         st.write(f"送料の合計: {total_shipping}円")
 
-        # 計算結果をダウンロード可能なCSVファイルとして保存
+        # 結果をCSVでダウンロード
         csv = df.to_csv(index=False, encoding='shift_jis')
         st.download_button(label="計算結果をダウンロード", data=csv, file_name='shipping_calculations.csv', mime='text/csv')
 
