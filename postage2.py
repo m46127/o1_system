@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
 
 # 全角数字を半角数字に変換する関数
 def zenkaku_to_hankaku(s):
@@ -31,6 +30,7 @@ def calculate_shipping(row):
     quantity_columns = ['明細１個数', '明細２個数', '明細３個数', '明細４個数', '明細５個数', '明細６個数', '明細７個数', '明細８個数']
 
     total_shipping = 0
+    st.write(f"都道府県: {prefecture}")
 
     for weight_col, qty_col in zip(weight_columns, quantity_columns):
         weight = zenkaku_to_hankaku(str(row.get(weight_col, 0))).strip()  # 空白を削除
@@ -40,20 +40,25 @@ def calculate_shipping(row):
         try:
             weight = float(weight)
             quantity = int(quantity)
+            st.write(f"{weight_col}: {weight}, {qty_col}: {quantity}")
         except ValueError:
-            continue  # 数値に変換できない場合は次へ
+            st.write(f"{weight_col}: エラー, {qty_col}: エラー")
+            continue
 
         # 送料ルールの適用
-        rule_applied = False
+        rule_applied = False  # ルールが適用されたかどうかを確認
         for region, rates in shipping_rules.items():
             if prefecture in region.split(','):
                 for max_weight, rate in sorted(rates.items()):
                     if weight <= max_weight:
                         total_shipping += rate * quantity
+                        st.write(f"適用された料金: {rate}円, 個数: {quantity}, 部分送料: {rate * quantity}円")
                         rule_applied = True
                         break
                 if rule_applied:
                     break
+        if not rule_applied:
+            st.write(f"都道府県: {prefecture}に該当する送料ルールが見つかりません")
 
     return total_shipping
 
@@ -69,26 +74,14 @@ def main():
 
         # 送料を計算して新しい列に追加
         df['送料'] = df.apply(calculate_shipping, axis=1)
-        df['送料（消費税込）'] = df['送料'] * 1.1
 
-        # 送料と消費税込み送料の合計を表示
+        # 送料の合計を表示
         total_shipping = df['送料'].sum()
-        total_shipping_with_tax = df['送料（消費税込）'].sum()
         st.write(f"送料の合計: {total_shipping}円")
-        st.write(f"送料の合計（消費税込）: {total_shipping_with_tax:.0f}円")
 
-        # 結果をExcelでダウンロード
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='送料計算結果')
-        output.seek(0)
-
-        st.download_button(
-            label="計算結果をエクセルでダウンロード",
-            data=output,
-            file_name='shipping_calculations_with_tax.xlsx',
-            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+        # 結果をCSVでダウンロード
+        csv = df.to_csv(index=False, encoding='shift_jis')
+        st.download_button(label="計算結果をダウンロード", data=csv, file_name='shipping_calculations.csv', mime='text/csv')
 
 if __name__ == "__main__":
     main()
