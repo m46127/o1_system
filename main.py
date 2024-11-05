@@ -2,7 +2,7 @@
 import streamlit as st
 
 # メニューの選択肢を定義
-menu_options = ["トップページ", "ピッキング","並び替え", "PDF作成", "在庫","追加数量","送料","送料チェック"]
+menu_options = ["トップページ", "ピッキング","並び替え", "PDF作成", "在庫","追加数量","送料"]
 
 # サイドバーでオプションメニューを表示
 selected_option = st.sidebar.radio("メインメニュー", menu_options)
@@ -46,7 +46,3 @@ elif selected_option == "送料":
     from postage import main as postage_main
     postage_main()
 
-elif selected_option == "送料チェック":
-    # Inventory.py の内容をインポートして実行
-    from postage2 import main as postage2_main
-    postage2_main()

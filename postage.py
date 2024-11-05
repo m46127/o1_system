@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import chardet
 
 # 全角数字を半角数字に変換する関数
 def zenkaku_to_hankaku(s):
@@ -21,29 +22,35 @@ shipping_rules = {
     '東京都,神奈川県,千葉県,埼玉県,茨城県,群馬県,山梨県,栃木県': {5: 500, 10: 1030, 20: 1280, 30: 2330, 50: 3350},
     '宮城県,山形県,福島県': {5: 500, 10: 1230, 20: 1480, 30: 2530, 50: 3700},
     '青森県,秋田県,岩手県': {5: 500, 10: 1230, 20: 1480, 30: 2530, 50: 4150},
-    '北海道': {5: 500, 10: 1330, 20: 1580, 30: 2930, 50: 4900},
+    '北海道,札幌,道東,道南,道央,道北,道西': {5: 500, 10: 1330, 20: 1580, 30: 2930, 50: 4900},
 }
 
 # 送料計算関数
 def calculate_shipping(row):
-    prefecture = row['着店県名称'].strip()  # 空白を削除して都道府県名を取得
+    prefecture = row['着店県名称'].strip()
     weight_columns = ['明細１重量', '明細２重量', '明細３重量', '明細４重量', '明細５重量', '明細６重量', '明細７重量', '明細８重量']
     quantity_columns = ['明細１個数', '明細２個数', '明細３個数', '明細４個数', '明細５個数', '明細６個数', '明細７個数', '明細８個数']
 
+    # 沖縄県の場合は特別な計算を適用
+    if prefecture == '沖縄県':
+        try:
+            base_fee = float(zenkaku_to_hankaku(str(row['運賃請求金額'])))
+            return base_fee * 1.1  # 10%プラスした料金
+        except (ValueError, KeyError):
+            return 0  # 運賃請求金額が無効な場合、送料を0とする
+
+    # その他の都道府県は通常の送料計算
     total_shipping = 0
-
     for weight_col, qty_col in zip(weight_columns, quantity_columns):
-        weight = zenkaku_to_hankaku(str(row.get(weight_col, 0))).strip()  # 空白を削除
-        quantity = zenkaku_to_hankaku(str(row.get(qty_col, 0))).strip()  # 空白を削除
+        weight = zenkaku_to_hankaku(str(row.get(weight_col, 0))).strip()
+        quantity = zenkaku_to_hankaku(str(row.get(qty_col, 0))).strip()
 
-        # 数値に変換
         try:
             weight = float(weight)
             quantity = int(quantity)
         except ValueError:
-            continue  # 数値に変換できない場合は次へ
+            continue
 
-        # 送料ルールの適用
         rule_applied = False
         for region, rates in shipping_rules.items():
             if prefecture in region.split(','):
@@ -62,10 +69,21 @@ def main():
 
     # CSVファイルのアップロード
     uploaded_file = st.file_uploader("CSVファイルを選択してください", type="csv")
-    
+
     if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file, encoding='shift_jis')
-        st.write("データの最初の数行:", df.head())
+        # ファイルのエンコーディングを検出
+        raw_data = uploaded_file.read()
+        detected_encoding = chardet.detect(raw_data)['encoding']
+        st.write(f"検出されたエンコーディング: {detected_encoding}")
+
+        # ファイルを適切なエンコーディングで読み込む
+        uploaded_file.seek(0)
+        try:
+            df = pd.read_csv(uploaded_file, encoding=detected_encoding)
+            st.write("データの最初の数行:", df.head())
+        except Exception as e:
+            st.error(f"ファイルの読み込みに失敗しました: {e}")
+            return
 
         # 送料を計算して新しい列に追加
         df['送料'] = df.apply(calculate_shipping, axis=1)
