@@ -6,12 +6,12 @@ from io import BytesIO
 def calculate_additional_quantity(sku_quantity):
     """
     商品数量に基づき、追加数量を計算
-    4点: +1, 5点: +2, 6点: +3、以降1点増えるごとに+1
+    5点: +1, 6点: +2、以降1点増えるごとに+1
     """
-    if sku_quantity >= 4:
-        return sku_quantity - 3  # 4点で+1、5点で+2、6点で+3
+    if sku_quantity >= 5:
+        return sku_quantity - 4  # 5点で+1、6点で+2、7点で+3
     else:
-        return 0  # 3点以下の場合は追加数量なし
+        return 0  # 4点以下の場合は追加数量なし
 
 def process_file(uploaded_file):
     df = pd.read_csv(uploaded_file)  # CSVファイルを読み込み
