@@ -73,6 +73,10 @@ def main():
         result_df = process_file(uploaded_file)
         
         if result_df is not None:
+            # 追加数量の合計を計算して表示
+            total_additional_quantity = result_df['追加数量'].sum()
+            st.write(f"追加数量の合計: {total_additional_quantity}")
+            
             # 結果を表示
             st.dataframe(result_df)
             
