@@ -51,7 +51,7 @@ def create_pdf_files(uploaded_file):
         customer_id = record.get('顧客ID', '')
         cv.setFont('mmt', 10) 
         cv.drawString(30, h - 60, '納品書')
-        cv.setFont('mmt', 12) 
+        cv.setFont('mmt', 11) 
         cv.drawString(30, h - 80, 'この度はお買い上げいただき、ありがとうございます。')
 
         # 住所情報の描画
@@ -68,21 +68,26 @@ def create_pdf_files(uploaded_file):
         cv.drawString(30, h - 140, f"{o_todokede_saki_1}様")
 
         cv.setFont('mmt', 10)
-        cv.drawString(30, h - 170, str(o_todokede_jusho_1))
-        cv.drawString(30, h - 185, str(o_todokede_jusho_2))
-        cv.drawString(30, h - 200, str(o_todokede_jusho_3))
+        cv.drawString(30, h - 160, str(o_todokede_jusho_1))
+        cv.drawString(30, h - 175, str(o_todokede_jusho_2))
+        cv.drawString(30, h - 190, str(o_todokede_jusho_3))
 
         # ご依頼主情報の描画
-        go_irainushi_name = record.get('ご依頼主名称1', '')
+        #go_irainushi_name = record.get('ご依頼主名称1', '')
         #go_irainushi_yubin = record.get('ご依頼主郵便番号', '')
-        go_irainushi_jusho_1 = record.get('ご依頼主住所1', '')
-        go_irainushi_jusho_2 = record.get('ご依頼主住所2', '')
+        #go_irainushi_jusho_1 = record.get('ご依頼主住所1', '')
+        #go_irainushi_jusho_2 = record.get('ご依頼主住所2', '')
 
-        cv.setFont('mmt', 10)
-        cv.drawString(350, h - 140, go_irainushi_name)
+        #cv.setFont('mmt', 10)
+        #cv.drawString(350, h - 140, go_irainushi_name)
         #cv.drawString(350, h - 155, f"〒{go_irainushi_yubin}")
-        cv.drawString(350, h - 170, go_irainushi_jusho_1)
-        cv.drawString(350, h - 185, go_irainushi_jusho_2)
+        #cv.drawString(350, h - 170, go_irainushi_jusho_1)
+        #cv.drawString(350, h - 185, go_irainushi_jusho_2)
+
+        # カスタマイズ後依頼主
+        cv.setFont('mmt', 10)
+        cv.drawString(400, h - 170, 'Re.muse Beauty株式会社')
+        cv.drawString(400, h - 185, '東京都中央区銀座1-14-14中公ビル4F')
 
         # 商品リストの描画
         items = get_items(record)
