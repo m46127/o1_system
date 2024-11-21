@@ -3,9 +3,10 @@ import pandas as pd
 import base64
 from io import StringIO
 
+# SKUと数量のラベルを生成する関数
 def consumer_to_group_label(consumer):
-    product_codes = sorted(list(consumer["products"].keys()))
-    return ",".join(product_codes)
+    product_items = sorted(consumer["products"].items())  # SKUと数量を両方考慮
+    return ",".join(f"{sku}:{qty}" for sku, qty in product_items)
 
 def process_file(uploaded_file):
     # CSVファイルを読み込む
@@ -31,13 +32,18 @@ def process_file(uploaded_file):
     # 商品情報でグループ化
     consumer_groups = {}
     for consumer in consumers:
-        label = consumer_to_group_label(consumer)
+        label = consumer_to_group_label(consumer)  # SKUと数量のラベルでグループ化
         l = consumer_groups.get(label, [])
         l.append(consumer)
         consumer_groups[label] = l
     
     # グループを並び替え
-    sorted_consumer_groups = sorted(consumer_groups.values(), key=lambda x: len(x), reverse=True)
+    sorted_consumer_groups = sorted(
+        consumer_groups.values(),
+        key=lambda x: (len(x), consumer_to_group_label(x[0])),
+        reverse=True
+    )
+    
     output = []
     for consumers in sorted_consumer_groups:
         for consumer in consumers:
