@@ -19,7 +19,7 @@ def process_file(uploaded_file):
     result = []
     
     # SKUの条件を複数設定
-    valid_sku_prefixes = ['dear-esc-1', 'dear-mcl-1', 'dear-fwa-1', 'dear-mlo-1', 'dear-des-1', 'dear-full-1','dear-ext-1']
+    valid_sku_prefixes = ['dear-esc-1', 'dear-mcl-1', 'dear-fwa-1', 'dear-mlo-1', 'dear-des-1', 'dear-full-1','dear-ext-1','dear-uvw-1']
 
     for _, row in df.iterrows():
         total_sku_quantity = 0
